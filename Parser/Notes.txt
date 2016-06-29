@@ -1,0 +1,20 @@
+## possible queries
+select 
+count(1)    ## How many times
+sum(txn.amount)    ## How much, total amount, spend
+act.balance   ## account balance, have
+act.created_date  ## When
+max(act.total_limit)   ## How much more can
+from transaction txn 
+join 
+account act     
+on txn.account_id=act.id
+where 
+txn.posted_date between  and     ## since, from, this, last, between and, ...
+and txn.category in ()        ## shopping,...
+and txn.merchant in ()        ## Bloomingdales
+and act.institution in ()   ## inst name
+and act.card_name in ()    ## card name
+and act.created_date between and    ## since start using
+and act.account_type in ()    ## Debit, Credit
+;
