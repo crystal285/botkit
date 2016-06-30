@@ -5,10 +5,13 @@ from datetime import date,timedelta
 import re
 import calendar
 from nltk.tokenize import RegexpTokenizer
+import sys
 
 
 #q_from_user="How much !money $did I spend on shopping and restaurant using chase sapphire since 2014 02-01!!"
-q_from_user="What is my account balance?"
+#q_from_user="What is my account balance?"
+
+q_from_user=str(sys.argv)
 
 ##########################
 ##  normalize sentence  ##
@@ -378,8 +381,8 @@ def connect():
             row = cursor.fetchone()
  
             while row is not None:
-                print row[0]
-                row = cursor.fetchone()
+                return row[0]
+                #row = cursor.fetchone()
  
     except Error as e:
         print(e)
