@@ -1,38 +1,39 @@
 import mysql.connector
 from mysql.connector import Error
- 
- 
-def connect():
-    """ Connect to MySQL database """
-    try:
-        conn = mysql.connector.connect(host='localhost',
-                                       database='innovation',
-                                       user='root')
-        if conn.is_connected():
-            print('Connected to MySQL database')
-            cursor = conn.cursor()
-            cursor.execute("select count(1) from account;")
-            row = cursor.fetchone()
- 
-            while row is not None:
-                print(row)
-                row = cursor.fetchone()
- 
-    except Error as e:
-        print(e)
- 
-    finally:
-        conn.close()
- 
-
-connect()
-
-
-
 from dateutil import parser
 from datetime import date,timedelta
 import re
 import calendar
+from nltk.tokenize import RegexpTokenizer
+
+
+#q_from_user="How much !money $did I spend on shopping and restaurant using chase sapphire since 2014 02-01!!"
+q_from_user="What is my account balance?"
+
+##########################
+##  normalize sentence  ##
+##########################
+
+def normalize(string):
+    string=string.lower()
+    return string
+
+
+#########################
+##  tokenize sentence  ##
+#########################
+
+def keyword(string):
+    string=normalize(string)
+    tokenizer = RegexpTokenizer(r'\w+')
+    stop_word=["i","did","do","am","please","you","u"]
+    response = tokenizer.tokenize(string)
+    return [word for word in response if word not in stop_word]
+
+
+####################################
+##  package date parser redefine  ##
+####################################
 
 def parse(self, timestr, default=None,
           ignoretz=False, tzinfos=None,
@@ -40,6 +41,9 @@ def parse(self, timestr, default=None,
     return self._parse(timestr, **kwargs)
 parser.parser.parse = parse
 
+############################
+##  date parser function  ##
+############################
 
 def parse_date(string):
     query_date=[]
@@ -62,6 +66,8 @@ def parse_date(string):
             if "month" in substring:
                 subdate[0].year=today.year
                 subdate[0].month=today.month
+            elif subdate[0].year is None and subdate[0].month is not None:
+                subdate[0].year=today.year
         if "last" in substring:
             if "year" in substring:
                 subdate[0].year=today.year-1
@@ -71,6 +77,8 @@ def parse_date(string):
                 if subdate[0]==0:
                     subdate[0].year=today.year-1
                     subdate[0].month=12
+            elif subdate[0].year is None and subdate[0].month is not None:
+                subdate[0].year=today.year-1
         if subdate[0].year is None and (subdate[0].month is not None or subdate[0].day is not None):
             subdate[0].year=today.year
 
@@ -120,10 +128,264 @@ def parse_date(string):
                     query_date.append("txn.posted_date='")
                     query_date.append(norm_date)
                     query_date.append("'")
-        
+
     response="".join(query_date) 
     response=response.replace("'txn.posted_date","' and txn.posted_date")
     return response
+
+
+
+
+######################
+##  parse category  ##
+######################
+
+def parse_category(keywords):
+    category_dict={"shopping":"Shopping",
+                   "restaurant":"Restaurants",
+                   "food":"Food & Dining",
+                   "gas":"Gas & Fuel",
+                   "movie":"Movies & DVDs",
+                   "clothing":"Clothing",
+                   "clothes":"Clothing"}
+    category_filt=[category_dict[word] for word in keywords if word in category_dict.keys()]
+    query="','".join(category_filt)
+    if query!='':
+        query="txn.category in ('"+query+"')"
+    else:
+        query=''
+    return query
+
+
+#########################
+##  parse institution  ##
+#########################
+
+def parse_institution(keywords):
+    institution_dict={"chase":"Chase",
+                      "boa":"BOA",
+                      "discover":"Discover"
+                     }
+    institution_filt=[institution_dict[word] for word in keywords if word in institution_dict.keys()]
+    query="','".join(institution_filt)
+    if query!='':
+        query="act.institution in ('"+query+"')"
+    else:
+        query=''
+    return query
+
+#######################
+##  parse card name  ##
+#######################
+
+def parse_card(keywords):
+    card_dict={"freedom":"Freedom",
+               "sapphire":"Sapphire",
+               "cashReward":"CashReward",
+               "checking":"Checking",
+               "saving":"Saving"
+              }
+    card_filt=[card_dict[word] for word in keywords if word in card_dict.keys()]
+    query="','".join(card_filt)
+    if query!='':
+        query="act.card_name in ('"+query+"')"
+    else:
+        query=''
+    return query
+
+
+
+##########################
+##  parse account type  ##
+##########################
+
+def parse_accounttype(keywords):
+    accounttype_dict={"credit":"200",
+                      "debit":"100','101"
+                     }
+    accounttype_filt=[accounttype_dict[word] for word in keywords if word in accounttype_dict.keys()]
+    query="','".join(accounttype_filt)
+    if query!='':
+        query="act.account_type in ('"+query+"')"
+    else:
+        query=''
+    return query
+
+
+
+########################
+##  Data definition  ##
+########################
+
+_txn_table = 'transaction txn join account act on txn.account_id=act.id'
+_acc_table = 'account'
+
+_question_dict = {
+    'acc_balance': [['how', 'much', 'have', 'balance'],
+                    [0.2, 0.2, 0.1, 0.8],
+                    [" sum(case when act.account_type in ('200','201') then -act.balance when act.account_type not in ('200','201') then act.balance end) from "+_acc_table+' act ']],
+                    
+    'card_limit' : [['credit', 'limit', 'more'],
+                    [0.4, 0.4, 0.2],
+                    [' max(act.total_limit) from '+ _acc_table + ' act ']],
+                    
+    'txn_spend'  : [['how', 'much', 'spend', 'cost'],
+                    [0.2, 0.2, 0.4, 0.2],
+                    [' sum(txn.amount) from ' + _txn_table ]],
+                    
+    'txn_count'  : [['how', 'many', 'times', 'spend'],
+                    [0.2, 0.2, 0.4, 0.2],
+                    [' count(1) from '+ _txn_table]]
+                    
+}#
+#_filter_dict = {
+#
+#}
+_filter_date_range  = ['since', 'from', 'last', 'between', 'this']
+_filter_category    = ['shopping', 'food', 'movie', 'gas']
+_filter_merchant    = ['target', 'bloomingdales']
+_filter_institution = ['chase', 'boa', 'discover']
+_filter_acc_type    = ['debit', 'credit', 'checking', 'saving']
+
+
+
+######################
+##  Class Question  ##
+######################
+
+class Question:
+    name ='';
+    keywords=[];
+    keywordScores = [];
+    queryTemplate = '';
     
+    def __init__(self, n, kws, scores, temp):
+        self.name = n
+        self.keywords = kws
+        self.keywordScores = scores
+        self.queryTemplate = temp;
+
+
+    def calScore (self, words):
+        total = 0
+        for w in words:
+            for i, v in enumerate(self.keywords):
+                if w == v:
+                    total += self.keywordScores[i]
+        return total
+
+
+    def getQuery(self):
+        return self.queryTemplate
+
+
+####################
+##  Class Filter  ##
+####################
+
+class Filter:
+    name = '';
+    queryTemplate ='';
+    valuesInOrder= [];
+
+    def __init__(self, n, temp, values):
+        self.name = n
+        self.queryTemplate = temp
+        self.valuesInOrder = values
+
+    def getQuery(self):
+        print 'print filter query';
+
+
+
+questionList = [];
+filterList = [];
+
+def init():
+    for key, value in _question_dict.iteritems():
+        obj = Question(key, value[0], value[1], value[2][0])
+        questionList.append(obj)
+
+                    
+init()
+                
+                    
+
+########################################################   
+##  compose sql query based on the provided keywords  ##
+########################################################
+
+def selectQuery(words):
+    max = 0
+    question = questionList[0]
     
+    for q in questionList :
+        score = q.calScore(words)
+        if score > max:
+            max = score
+            question = q
+
+    return question.getQuery()
+
+
+#selectQuery(['how', 'many', 'times', 'balance']);
+
+
+
+#####################
+##  compose query  ##
+#####################
+
+def compose_query(string):
+    query=["select"]
+    keywords=keyword(string)
     
+    query.append(selectQuery(keywords))
+    
+    filt_list=[]
+    
+    filt_list.append(parse_category(keywords))
+    filt_list.append(parse_institution(keywords))
+    filt_list.append(parse_card(keywords))
+    filt_list.append(parse_accounttype(keywords))
+    filt_list.append(parse_date(string))
+    filt=" and ".join(filter(None,filt_list))
+    
+    if filt!='':
+        query.append(" where ")
+        query.append(filt)
+    
+    query.append(";")
+    return " ".join(query)
+
+
+
+
+########################################
+##  connect to database query result  ##
+########################################
+
+def connect():
+    """ Connect to MySQL database """
+    try:
+        conn = mysql.connector.connect(host='localhost',
+                                       database='innovation',
+                                       user='root')
+        if conn.is_connected():
+            print('Connected to MySQL database')
+            cursor = conn.cursor()
+            cursor.execute(compose_query(q_from_user))
+            row = cursor.fetchone()
+ 
+            while row is not None:
+                print(row)
+                row = cursor.fetchone()
+ 
+    except Error as e:
+        print(e)
+ 
+    finally:
+        conn.close()
+ 
+
+connect()
