@@ -260,7 +260,7 @@ _question_dict = {
                     
     'txn_spend'  : [['how', 'much', 'spend', 'cost'],
                     [0.2, 0.2, 0.4, 0.2],
-                    [' sum(txn.amount) from ' + _txn_table ],
+                    [' -sum(txn.amount) from ' + _txn_table ],
                     ['You have spent {}']],
                     
     'txn_count'  : [['how', 'many', 'times', 'spend'],
@@ -389,13 +389,57 @@ def compose_query(string):
     query.append(question.queryTemplate)
     
     filt_list=[]
+    answer=[]
     
-    filt_list.append(parse_category(keywords))
-    filt_list.append(parse_institution(keywords))
-    filt_list.append(parse_card(keywords))
-    filt_list.append(parse_accounttype(keywords))
-    filt_list.append(parse_date(string))
-    filt_list.append(parse_merchant(string))
+    category=parse_category(keywords)
+    filt_list.append(category)
+    category_answer=category.replace("txn.category_name in (","on ")
+    category_answer=category_answer.replace("'","")
+    category_answer=category_answer.replace(")","")
+    category_answer=category_answer.replace(","," and ")
+    answer.append(category_answer)
+    
+    merchant=parse_merchant(keywords)
+    filt_list.append(merchant)
+    merchant_answer=merchant.replace("txn.merchant in (","on ")
+    merchant_answer=merchant_answer.replace("'","")
+    merchant_answer=merchant_answer.replace(")","")
+    merchant_answer=merchant_answer.replace(","," and ")
+    answer.append(merchant_answer)
+
+    institution=parse_institution(keywords)
+    filt_list.append(institution)
+    institution_answer=institution.replace("act.institution in (","using ")
+    institution_answer=institution_answer.replace("'","")
+    institution_answer=institution_answer.replace(")","")
+    institution_answer=institution_answer.replace(","," and ")
+    answer.append(institution_answer)
+    
+    card=parse_card(keywords)
+    filt_list.append(card)
+    card_answer=card.replace("act.card_name in ("," ")
+    card_answer=card_answer.replace("'","")
+    card_answer=card_answer.replace(")","")
+    card_answer=card_answer.replace(","," and ")
+    answer.append(card_answer)
+    
+    accounttype=parse_accounttype(keywords)
+    filt_list.append(accounttype)
+    card_answer=card.replace("act.account_type in ("," ")
+    card_answer=card_answer.replace("'","")
+    card_answer=card_answer.replace(")","")
+    card_answer=card_answer.replace(","," and ")
+    answer.append(card_answer)
+
+    
+    date=parse_date(string)
+    filt_list.append(date)
+    date_answer=date.replace("txn.posted_date","")
+    date_answer=date_answer.replace("=","on")
+    answer.append(date_answer)
+    
+    answer=" ".join(filter(None, answer))
+    
     filt=" and ".join(filter(None,filt_list))
     
     if filt!='':
@@ -404,7 +448,7 @@ def compose_query(string):
     
     query.append(";")
     result = " ".join(query)
-    return(result, question)
+    return(result, question,answer)
 
 
 
@@ -424,13 +468,13 @@ def connect():
             #print('Connected to MySQL database')
             cursor = conn.cursor()
             result = compose_query(q_from_user)
-
+			
             #print "executing query: {}".format(query)
             cursor.execute(result[0])
             row = cursor.fetchone()
  
             while row is not None:
-                print result[1].getAnswer(row[0]);
+                print result[1].getAnswer(row[0])+" "+result[2];
                 return row[0]
  
     except Error as e:
