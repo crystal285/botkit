@@ -312,22 +312,21 @@ def init():
                     
 init()
                 
-                    
+
+########################
+##  Error Definition  ##
+########################
+class BotError(Exception):
+    def __init__(self, code, message):
+        self.code = code
+            self.message = message
+        def __str__(self):
+                return repr(self.code)
+
 
 ########################################################   
 ##  compose sql query based on the provided keywords  ##
 ########################################################
-
-
-
-
-class BotError(Exception):
-    def __init__(self, code, message):
-       self.code = code
-       self.message = message 
-    def __str__(self):
-        return repr(self.code)
-
 def selectQuery(words):
     max = 0
     question = questionList[0]
@@ -342,8 +341,6 @@ def selectQuery(words):
     else:
        return question.getQuery()
 
-
-#selectQuery(['how', 'many', 'times', 'balance']);
 
 
 
@@ -391,15 +388,14 @@ def connect():
         if conn.is_connected():
             print('Connected to MySQL database')
             cursor = conn.cursor()
-	    query = compose_query(q_from_user)
-	    print query
-            cursor.execute(compose_query(q_from_user))
+            query = compose_query(q_from_user)
+            print "executing query: {}".format(query)
+            cursor.execute(query)
             row = cursor.fetchone()
  
             while row is not None:
                 print row[0]
                 return row[0]
-                #row = cursor.fetchone()
  
     except Error as e:
         print(e)
