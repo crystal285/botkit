@@ -370,10 +370,12 @@ def compose_query(string):
 
 def connect():
     """ Connect to MySQL database """
+ 
     try:
         conn = mysql.connector.connect(host='localhost',
                                        database='innovation',
-                                       user='root')
+                                       user='root',
+					password='admin')
         if conn.is_connected():
             print('Connected to MySQL database')
             cursor = conn.cursor()
@@ -387,8 +389,8 @@ def connect():
     except Error as e:
         print(e)
  
-    finally:
-        conn.close()
+    else: 
+       conn.close()
  
 
 connect()
