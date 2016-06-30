@@ -378,7 +378,7 @@ def connect():
             row = cursor.fetchone()
  
             while row is not None:
-                print(row)
+                print row[0]
                 row = cursor.fetchone()
  
     except Error as e:
