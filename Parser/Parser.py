@@ -146,19 +146,44 @@ def parse_date(string):
 def parse_category(keywords):
     category_dict={"shopping":"Shopping",
                    "restaurant":"Restaurants",
-                   "food":"Food & Dining",
+                   "food":"Food & Dining','Restaurants','Grocery",
                    "gas":"Gas & Fuel",
                    "movie":"Movies & DVDs",
                    "clothing":"Clothing",
-                   "clothes":"Clothing"}
+                   "clothes":"Clothing",
+                   "pet":"Pet Food & Supplies','Pet','Veterinary",
+                   "pets":"Pet Food & Supplies','Pet','Veterinary"}
     category_filt=[category_dict[word] for word in keywords if word in category_dict.keys()]
     query="','".join(category_filt)
     if query!='':
-        query="txn.category in ('"+query+"')"
+        query="txn.category_name in ('"+query+"')"
     else:
         query=''
     return query
 
+
+
+######################
+##  parse merchant  ##
+######################
+
+def parse_merchant(keywords):
+    merchant_dict={"bloomingdale":"Bloomingdale's",
+   	 			   "bloomingdale's":"Bloomingdale's",
+   	 			   "bloomingdales":"Bloomingdale's",
+                   "amazon":"Amazon",
+                   "netflix":"Netflix",
+                   "cvs":"CVS",
+                   "petco":"Petco",
+                   "petsmart":"PetSmart"
+                   }
+    merchant_filt=[merchant_dict[word] for word in keywords if word in merchant_dict.keys()]
+    query="','".join(merchant_filt)
+    if query!='':
+        query="txn.merchant in ('"+query+"')"
+    else:
+        query=''
+    return query
 
 #########################
 ##  parse institution  ##
@@ -361,6 +386,7 @@ def compose_query(string):
     filt_list.append(parse_card(keywords))
     filt_list.append(parse_accounttype(keywords))
     filt_list.append(parse_date(string))
+    filt_list.append(parse_merchant(string))
     filt=" and ".join(filter(None,filt_list))
     
     if filt!='':
@@ -388,12 +414,12 @@ def connect():
             #print('Connected to MySQL database')
             cursor = conn.cursor()
             query = compose_query(q_from_user)
-            print "executing query: {}".format(query)
+            #print "executing query: {}".format(query)
             cursor.execute(query)
             row = cursor.fetchone()
  
             while row is not None:
-                print row[0]
+                print -row[0]
                 return row[0]
  
     except Error as e:
