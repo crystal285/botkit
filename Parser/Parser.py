@@ -9,9 +9,9 @@ import sys
 
 
 #q_from_user="How much !money $did I spend on shopping and restaurant using chase sapphire since 2014 02-01!!"
-#q_from_user="What is my account balance?"
+q_from_user="What is my account balance?"
 
-q_from_user=str(sys.argv)
+#q_from_user=str(sys.argv)
 
 ##########################
 ##  normalize sentence  ##
@@ -383,12 +383,13 @@ def connect():
     try:
         conn = mysql.connector.connect(host='localhost',
                                        database='innovation',
-                                       user='root')
+                                       user='root',
+                                       password='admin')
         if conn.is_connected():
-            print('Connected to MySQL database')
+            #print('Connected to MySQL database')
             cursor = conn.cursor()
             query = compose_query(q_from_user)
-            print "executing query: {}".format(query)
+            #print "executing query: {}".format(query)
             cursor.execute(query)
             row = cursor.fetchone()
  

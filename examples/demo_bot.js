@@ -194,7 +194,8 @@ controller.hears(['python'],['direct_message','direct_mention','mention'],functi
   PythonShell.run('Parser/Parser.py', function (err,results) {
     if (err)
         bot.reply(message,"Your query is invalid");
-    bot.reply(message,results);
+        bot.reply(message,results[0]);
+    console.log(results);
   });
 });
 
