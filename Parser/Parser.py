@@ -5,10 +5,13 @@ from datetime import date,timedelta
 import re
 import calendar
 from nltk.tokenize import RegexpTokenizer
+import sys
 
 
 #q_from_user="How much !money $did I spend on shopping and restaurant using chase sapphire since 2014 02-01!!"
-q_from_user="What is my account balance?"
+#q_from_user="What is my account balance?"
+
+q_from_user=str(sys.argv)
 
 ##########################
 ##  normalize sentence  ##
@@ -309,12 +312,21 @@ def init():
                     
 init()
                 
-                    
+
+########################
+##  Error Definition  ##
+########################
+class BotError(Exception):
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+    def __str__(self):
+        return repr(self.code)
+
 
 ########################################################   
 ##  compose sql query based on the provided keywords  ##
 ########################################################
-
 def selectQuery(words):
     max = 0
     question = questionList[0]
@@ -324,11 +336,11 @@ def selectQuery(words):
         if score > max:
             max = score
             question = q
+    if(max <=0):
+       raise BotError('ERROR-1001', 'Keywords didnot match any predefined category')  
+    else:
+       return question.getQuery()
 
-    return question.getQuery()
-
-
-#selectQuery(['how', 'many', 'times', 'balance']);
 
 
 
@@ -367,25 +379,29 @@ def compose_query(string):
 
 def connect():
     """ Connect to MySQL database """
+ 
     try:
         conn = mysql.connector.connect(host='localhost',
                                        database='innovation',
-                                       user='root')
+                                       user='root',
+                                       password='admin')
         if conn.is_connected():
-            print('Connected to MySQL database')
+            #print('Connected to MySQL database')
             cursor = conn.cursor()
-            cursor.execute(compose_query(q_from_user))
+            query = compose_query(q_from_user)
+            #print "executing query: {}".format(query)
+            cursor.execute(query)
             row = cursor.fetchone()
  
             while row is not None:
                 print row[0]
-                row = cursor.fetchone()
+                return row[0]
  
     except Error as e:
         print(e)
  
-    finally:
-        conn.close()
+    else: 
+       conn.close()
  
 
 connect()
