@@ -18,3 +18,6 @@ and act.card_name in ()    ## card name
 and act.created_date between and    ## since start using
 and act.account_type in ()    ## Debit, Credit
 ;
+
+
+Your total spending on <Category/Merchant> using <FI> <Account Type> <Card Name> from <Date> to  <Date> /on <Date> is <amount>

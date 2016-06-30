@@ -240,7 +240,6 @@ def parse_accounttype(keywords):
     return query
 
 
-
 ########################
 ##  Data definition  ##
 ########################
@@ -251,19 +250,23 @@ _acc_table = 'account'
 _question_dict = {
     'acc_balance': [['how', 'much', 'have', 'balance'],
                     [0.2, 0.2, 0.1, 0.8],
-                    [" sum(case when act.account_type in ('200','201') then -act.balance when act.account_type not in ('200','201') then act.balance end) from "+_acc_table+' act ']],
+                    [" sum(case when act.account_type in ('200','201') then -act.balance when act.account_type not in ('200','201') then act.balance end) from "+_acc_table+' act '],
+                    ['Your account balance is {} ']],
                     
     'card_limit' : [['credit', 'limit', 'more'],
                     [0.4, 0.4, 0.2],
-                    [' max(act.total_limit) from '+ _acc_table + ' act ']],
+                    [' max(act.total_limit) from '+ _acc_table + ' act '],
+                    ['Your credit card total limit is {} ']],
                     
     'txn_spend'  : [['how', 'much', 'spend', 'cost'],
                     [0.2, 0.2, 0.4, 0.2],
-                    [' sum(txn.amount) from ' + _txn_table ]],
+                    [' -sum(txn.amount) from ' + _txn_table ],
+                    ['You have spent {} ']],
                     
     'txn_count'  : [['how', 'many', 'times', 'spend'],
                     [0.2, 0.2, 0.4, 0.2],
-                    [' count(1) from '+ _txn_table]]
+                    [' count(1) from '+ _txn_table],
+                    ['You have spent {} times ']]
                     
 }#
 #_filter_dict = {
@@ -286,12 +289,14 @@ class Question:
     keywords=[];
     keywordScores = [];
     queryTemplate = '';
+    answerTemplate = '';
     
-    def __init__(self, n, kws, scores, temp):
+    def __init__(self, n, kws, scores, temp, answer):
         self.name = n
         self.keywords = kws
         self.keywordScores = scores
         self.queryTemplate = temp;
+        self.answerTemplate = answer;
 
 
     def calScore (self, words):
@@ -305,6 +310,9 @@ class Question:
 
     def getQuery(self):
         return self.queryTemplate
+
+    def getAnswer(self, results):
+        return self.answerTemplate.format(results);
 
 
 ####################
@@ -331,7 +339,7 @@ filterList = [];
 
 def init():
     for key, value in _question_dict.iteritems():
-        obj = Question(key, value[0], value[1], value[2][0])
+        obj = Question(key, value[0], value[1], value[2][0], value[3][0])
         questionList.append(obj)
 
                     
@@ -349,10 +357,10 @@ class BotError(Exception):
         return repr(self.code)
 
 
-########################################################   
-##  compose sql query based on the provided keywords  ##
-########################################################
-def selectQuery(words):
+###################################
+##  Returns the matched question ##
+###################################
+def matchQuestion(words):
     max = 0
     question = questionList[0]
     
@@ -364,7 +372,7 @@ def selectQuery(words):
     if(max <=0):
        raise BotError('ERROR-1001', 'Keywords didnot match any predefined category')  
     else:
-       return question.getQuery()
+       return question
 
 
 
@@ -377,16 +385,62 @@ def compose_query(string):
     query=["select"]
     keywords=keyword(string)
     
-    query.append(selectQuery(keywords))
+    question = matchQuestion(keywords);
+    query.append(question.queryTemplate)
     
     filt_list=[]
+    answer=[]
     
-    filt_list.append(parse_category(keywords))
-    filt_list.append(parse_institution(keywords))
-    filt_list.append(parse_card(keywords))
-    filt_list.append(parse_accounttype(keywords))
-    filt_list.append(parse_date(string))
-    filt_list.append(parse_merchant(string))
+    category=parse_category(keywords)
+    filt_list.append(category)
+    category_answer=category.replace("txn.category_name in (","on ")
+    category_answer=category_answer.replace("'","")
+    category_answer=category_answer.replace(")","")
+    category_answer=category_answer.replace(","," and ")
+    answer.append(category_answer)
+    
+    merchant=parse_merchant(keywords)
+    filt_list.append(merchant)
+    merchant_answer=merchant.replace("txn.merchant in (","on ")
+    merchant_answer=merchant_answer.replace("'","")
+    merchant_answer=merchant_answer.replace(")","")
+    merchant_answer=merchant_answer.replace(","," and ")
+    answer.append(merchant_answer)
+
+    institution=parse_institution(keywords)
+    filt_list.append(institution)
+    institution_answer=institution.replace("act.institution in (","using ")
+    institution_answer=institution_answer.replace("'","")
+    institution_answer=institution_answer.replace(")","")
+    institution_answer=institution_answer.replace(","," and ")
+    answer.append(institution_answer)
+    
+    card=parse_card(keywords)
+    filt_list.append(card)
+    card_answer=card.replace("act.card_name in ("," ")
+    card_answer=card_answer.replace("'","")
+    card_answer=card_answer.replace(")","")
+    card_answer=card_answer.replace(","," and ")
+    answer.append(card_answer)
+    
+    accounttype=parse_accounttype(keywords)
+    filt_list.append(accounttype)
+    card_answer=card.replace("act.account_type in ("," ")
+    card_answer=card_answer.replace("'","")
+    card_answer=card_answer.replace(")","")
+    card_answer=card_answer.replace(","," and ")
+    answer.append(card_answer)
+
+    
+    date=parse_date(string)
+    filt_list.append(date)
+    date_answer=date.replace("txn.posted_date","")
+    date_answer=date_answer.replace("=","on ")
+    date_answer=date_answer.replace("date()","")
+    answer.append(date_answer)
+    
+    answer=" ".join(filter(None, answer))
+    
     filt=" and ".join(filter(None,filt_list))
     
     if filt!='':
@@ -394,7 +448,8 @@ def compose_query(string):
         query.append(filt)
     
     query.append(";")
-    return " ".join(query)
+    result = " ".join(query)
+    return(result, question,answer)
 
 
 
@@ -413,13 +468,17 @@ def connect():
         if conn.is_connected():
             #print('Connected to MySQL database')
             cursor = conn.cursor()
-            query = compose_query(q_from_user)
+            result = compose_query(q_from_user)
+			
             #print "executing query: {}".format(query)
-            cursor.execute(query)
+            cursor.execute(result[0])
             row = cursor.fetchone()
  
             while row is not None:
-                print -row[0]
+                if(row[0] is None):
+                    print result[1].getAnswer(0)+result[2];
+                else:
+                    print result[1].getAnswer('{:.2f}'.format(row[0]))+result[2];
                 return row[0]
  
     except Error as e:
