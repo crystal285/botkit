@@ -251,22 +251,22 @@ _question_dict = {
     'acc_balance': [['how', 'much', 'have', 'balance'],
                     [0.2, 0.2, 0.1, 0.8],
                     [" sum(case when act.account_type in ('200','201') then -act.balance when act.account_type not in ('200','201') then act.balance end) from "+_acc_table+' act '],
-                    ['Your account balance is {}']],
+                    ['Your account balance is {} ']],
                     
     'card_limit' : [['credit', 'limit', 'more'],
                     [0.4, 0.4, 0.2],
                     [' max(act.total_limit) from '+ _acc_table + ' act '],
-                    ['Your credit card total limit is {}']],
+                    ['Your credit card total limit is {} ']],
                     
     'txn_spend'  : [['how', 'much', 'spend', 'cost'],
                     [0.2, 0.2, 0.4, 0.2],
                     [' -sum(txn.amount) from ' + _txn_table ],
-                    ['You have spent {}']],
+                    ['You have spent {} ']],
                     
     'txn_count'  : [['how', 'many', 'times', 'spend'],
                     [0.2, 0.2, 0.4, 0.2],
                     [' count(1) from '+ _txn_table],
-                    ['You have spent {} times']]
+                    ['You have spent {} times ']]
                     
 }#
 #_filter_dict = {
@@ -475,7 +475,10 @@ def connect():
             row = cursor.fetchone()
  
             while row is not None:
-                print result[1].getAnswer(row[0])+" "+result[2];
+                if(row[0] is None):
+                    print result[1].getAnswer(0)+result[2];
+                else:
+                    print result[1].getAnswer('{:.2f}'.format(row[0]))+result[2];
                 return row[0]
  
     except Error as e:
