@@ -430,7 +430,7 @@ def connect():
             row = cursor.fetchone()
  
             while row is not None:
-                print -row[0]
+                print result[1].getAnswer(row[0]);
                 return row[0]
  
     except Error as e:
