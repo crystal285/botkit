@@ -163,7 +163,7 @@ controller.hears(['.*[H|h]ello.*|.*[H|h]i.*'],['direct_message','direct_mention'
                                 }
                                 user.name = convo.extractResponse('nickname');
                                 controller.storage.users.save(user, function(err, id) {
-                                    bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
+                                    bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on. Hi~' + user.name + 'What can I do for you?');
                                 });
                             });
 
