@@ -190,20 +190,22 @@ controller.on('direct_mention',function(bot,message) {
   bot.reply(message,'Hi, this is Cuty. What could I do for you?');
 });
 
-controller.hears(['python'],['direct_message','direct_mention','mention'],function(bot,message) {
-  PythonShell.run('Parser/Parser.py', function (err,results) {
+controller.hears(['.*'],['direct_message','direct_mention','mention'],function(bot,message) {
+                 var options = {
+                 args:[message.text]
+                 };
+  PythonShell.run('Parser/Parser.py', options,function (err,results) {
     if (err)
         bot.reply(message,"Your query is invalid");
-        bot.reply(message,results[0]);
-    console.log(results);
+    bot.reply(message,results[0]);
   });
 });
 
-controller.hears(['.*'],['direct_message','direct_mention','mention'],function(bot,message) {
-       console.log(message.text);
-       console.log(message.type);
-       bot.reply(message,"mention");
-});
+//controller.hears(['.*'],['direct_message','direct_mention','mention'],function(bot,message) {
+//       console.log(message.text);
+//       console.log(message.type);
+//       bot.reply(message,"mention");
+//});
 
 
 

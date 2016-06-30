@@ -9,9 +9,9 @@ import sys
 
 
 #q_from_user="How much !money $did I spend on shopping and restaurant using chase sapphire since 2014 02-01!!"
-q_from_user="What is my account balance?"
+#q_from_user="What is my account balance?"
 
-#q_from_user=str(sys.argv)
+q_from_user=str(sys.argv)
 
 ##########################
 ##  normalize sentence  ##
