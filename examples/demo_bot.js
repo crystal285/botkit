@@ -198,6 +198,7 @@ controller.hears(['.*'],['direct_message','direct_mention','mention'],function(b
     if (err)
         bot.reply(message,"Your query is invalid");
     bot.reply(message,results[0]);
+    //console.log(results);
   });
 });
 
