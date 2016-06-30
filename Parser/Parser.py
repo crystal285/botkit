@@ -52,6 +52,7 @@ def parse_date(string):
     query_date=[]
     response=[]
     label=""
+    string=string.replace("go to","")
     substr = re.split('( on | in | between | from | and | to | since )',string)
     for substring in substr:
         substring = "".join(" " if c in ('!','.',':',',','-') else c for c in substring)    #ignore punctuation
@@ -211,7 +212,9 @@ def parse_card(keywords):
                "sapphire":"Sapphire",
                "cashReward":"CashReward",
                "checking":"Checking",
-               "saving":"Saving"
+               "checkings":"Checking",
+               "saving":"Saving",
+                "savings":"Saving"
               }
     card_filt=[card_dict[word] for word in keywords if word in card_dict.keys()]
     query="','".join(card_filt)
@@ -266,7 +269,7 @@ _question_dict = {
     'txn_count'  : [['how', 'many', 'times', 'spend'],
                     [0.2, 0.2, 0.4, 0.2],
                     [' count(1) from '+ _txn_table],
-                    ['You have spent {} times ']]
+                    ['You have {} transcations ']]
                     
 }#
 #_filter_dict = {
@@ -425,11 +428,13 @@ def compose_query(string):
     
     accounttype=parse_accounttype(keywords)
     filt_list.append(accounttype)
-    card_answer=card.replace("act.account_type in ("," ")
-    card_answer=card_answer.replace("'","")
-    card_answer=card_answer.replace(")","")
-    card_answer=card_answer.replace(","," and ")
-    answer.append(card_answer)
+    accounttype_answer=accounttype.replace("act.account_type in ("," ")
+    accounttype_answer=accounttype_answer.replace("'","")
+    accounttype_answer=accounttype_answer.replace(")","")
+    accounttype_answer=accounttype_answer.replace(","," and ")
+    accounttype_dict={" 200":"credit accounts"," 100 and 101":"debit accounts"}
+    if accounttype_answer!='':
+        answer.append(accounttype_dict[accounttype_answer])
 
     
     date=parse_date(string)
