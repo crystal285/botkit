@@ -435,7 +435,8 @@ def compose_query(string):
     date=parse_date(string)
     filt_list.append(date)
     date_answer=date.replace("txn.posted_date","")
-    date_answer=date_answer.replace("=","on")
+    date_answer=date_answer.replace("=","on ")
+    date_answer=date_answer.replace("date()","")
     answer.append(date_answer)
     
     answer=" ".join(filter(None, answer))
