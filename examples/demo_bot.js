@@ -52,12 +52,7 @@ This bot demonstrates many of the core features of Botkit:
     -> http://howdy.ai/botkit
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-var PythonShell = require('../node_modules/python-shell');
-
-PythonShell.run('/Users/jmeng/Documents/chatbot/botkit/node_modules/python-shell/demo_script.py', function (err) {
-  if (err) throw err;
-  console.log('finished');
-});
+var PythonShell = require('python-shell');
 var Botkit = require('../lib/Botkit.js');
 
 if (!process.env.token) {
@@ -196,14 +191,11 @@ controller.on('direct_mention',function(bot,message) {
 });
 
 controller.hears(['python'],['direct_message','direct_mention','mention'],function(bot,message) {
-  return $.ajax({
-      type: "POST",
-      url: "demo_script.py",
-      data: { param: " "},
-      success:function(body){
-        bot.reply(message,body);
-      }
-    });
+  PythonShell.run('Parser/Parser.py', function (err,results) {
+    if (err)
+        bot.reply(message,"Your query is invalid");
+    bot.reply(message,results);
+  });
 });
 
 controller.hears(['.*'],['direct_message','direct_mention','mention'],function(bot,message) {
