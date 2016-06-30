@@ -319,9 +319,9 @@ init()
 class BotError(Exception):
     def __init__(self, code, message):
         self.code = code
-            self.message = message
-        def __str__(self):
-                return repr(self.code)
+        self.message = message
+    def __str__(self):
+        return repr(self.code)
 
 
 ########################################################   
@@ -383,8 +383,7 @@ def connect():
     try:
         conn = mysql.connector.connect(host='localhost',
                                        database='innovation',
-                                       user='root',
-					password='admin')
+                                       user='root')
         if conn.is_connected():
             print('Connected to MySQL database')
             cursor = conn.cursor()
