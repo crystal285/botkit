@@ -128,7 +128,7 @@ def parse_date(string):
                     query_date.append("'")
                 else:
                     norm_date = "-".join([str(subdate[0].year),str(subdate[0].month),str(subdate[0].day)])
-                    query_date.append("txn.posted_date='")
+                    query_date.append("date(txn.posted_date)='")
                     query_date.append(norm_date)
                     query_date.append("'")
 
@@ -383,13 +383,12 @@ def connect():
     try:
         conn = mysql.connector.connect(host='localhost',
                                        database='innovation',
-                                       user='root',
-                                       password='admin')
+                                       user='root')
         if conn.is_connected():
             #print('Connected to MySQL database')
             cursor = conn.cursor()
             query = compose_query(q_from_user)
-            #print "executing query: {}".format(query)
+            print "executing query: {}".format(query)
             cursor.execute(query)
             row = cursor.fetchone()
  
